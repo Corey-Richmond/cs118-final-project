@@ -1,0 +1,118 @@
+sr_handlepacket(sr, packet, len, interface):
+  if ( (uint16_t) (packet+0xc) == (uint16_t) htons(0x809) )
+    handle_arp(sr, packet, len, interface)
+  else if ( (uint16_t) (packet+0xc) == (uint16_t) htons(0x800) )
+    handle_ip(sr, packet, len, interface)
+
+handle_arp(sr, packet, len, interface):
+  %TYPE% iface;
+  if (len > 0x29) return 0;
+  packet += 0xe;
+  assert(iface = sr_get_interface(sr, interface));
+  if ( *((uint16_t*) (packet+6)) == *((uint16_t) htons(0x1)) )
+    handle_arp_request(sr, packet-0xe, len, interface, iface);
+  else if ( *((uint16_t) (packet+6)) == *((uint16_t) htons(0x2)) )
+    handle_arp_reply(sr, packet-0xe, len, interface, iface);
+
+handle_arp_reply(sr, packet, len, interface, iface):
+  packet += 0xe;
+  if ( (uint32_t) *(packet + 0x18) != iface->ip) return -2;
+  packet_2 = packet + 0x8;
+  cache = /* Insert cache address here */
+  mac = /* Insert mac address here */
+  if ( !(req = sr_arpcache_insert(cache, mac, ip)) ) return -1;
+  while ( !(/* Follow linked list, either req->next or req->packets */) ) {
+    /* a bunch of struct accesses manipulation */
+    sr_send_packet(sr, /* packet */, /* len */, /* interface */);
+  }
+  sr_arpreq_destroy(cache, req);
+
+handle_arp_request(sr, packet, len, interface, iface):
+  packet += 0xe;
+  if ( *((uint32_t) (packet+0x18)) != iface->ip ) return 0;
+  packet_out = malloc(0x2a);
+  /* Some memory manipulation using ptr, no jumps */
+  htons(/* something */); //?
+  htons(/* something */); //?
+  htons(/* something */); //?
+  sr_send_packet(sr, packet_out, 0x2a, interface);
+  free(packet_out);
+
+// Yikes, this one's a killer
+handle_ip(sr, packet, len, interface):
+  /* Some sanity checking */
+  /* Some printing, puts-ing and other debug info */
+  puts(/* Constant pointer */);
+  printf(/* Debug info? */);
+  printIPHeader(/* You can guess */);
+  if (get_checksum(packet + 0xe, /* length minus checksum bits */, 0) 
+               != packet + /* Where checksum is */)
+    return 0;
+  /* if statements */
+  while ( /* Follow some linked list */ ) {
+    /* Some memory manipulation */
+    if ( /* Some condition */ ) {
+      dest_router(sr, packet, len, interface);
+      return;
+    }
+  }
+  if ( /* Something */ ) {
+    send_icmp_error(sr, packet, len, interface, 0xb, 0);
+    return;
+  }
+  ptr = malloc(len);
+  memcpy(ptr, packet, len);
+  getchecksum(ptr, len, 0);
+  printf(/* Probably some debug info */);
+  forward_pkt(sr, ptr, len, interface);
+  free(ptr);
+
+send_icmp_error(sr, packet, len, interface, 0xb, 0):
+  iface = sr_get_interface(sr, interface);
+  out_len = 0x46;
+  packet_out = malloc(out_len);
+  /* Maddening amounts of struct accesses and memory manipulation */
+  get_checksum(ptr, out_len, 1);
+  /* Even more struct accesses and memory manipulation, with some htons()'s */
+  get_checksum(ptr, out_len, 0);
+  /* a small, small amount of memory manip */
+  forward_pkt(sr, packet_out, out_len, interface);
+  free(packet_out);
+
+/* Note, all those below just list 
+the functions called, not the logic between */
+forward_pkt(sr, packet, len, interface):
+  if (/* error or something */) send_icmp_error(/* parameters */)
+  assert(/* something */);
+  assert(iface = sr_get_interace(sr, interface));
+  sr_arpcache_lookup(/* parameters */);
+  sr_send_packet(/* parameters */);
+  free(/* something */);
+  sr_arpcache_queuereq(/* parameters */);
+  sr_handle_arpreq(/* parameters */);
+
+sr_handle_arpreq(sr, req):
+  difftime(time(0), req->time);
+  /* ??? */
+  /* Probably contains a while loop */
+  send_icmp_error(/* parameters */);
+  sr_arpreq_destroy(/* parameters */);
+  sr_get_interface(/* parameters */);
+  malloc(/* size */);
+  /* Fill out a bunch of packet details */
+  sr_send_packet(/* parameters */);
+  free(/* malloc'd thing? */
+
+dest_router(sr, packet, len, interface):
+  send_icmp_error(/* parameters */);
+  get_checksum(/* parameters */);
+  packet_out = malloc(/* length */);
+  memcpy(packet_out, /* source */, /* length */);
+  get_checksum(/* parameters */);
+  get_checksum(/* parameters */);
+  forward_pkt(sr, packet_out, /* length */, interface);
+  free(packet_out);
+
+get_checksum(packet, len, /* flags? */):
+  /* Just calculates checksum, calls no other functions */
+
