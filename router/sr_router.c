@@ -88,18 +88,18 @@ void sr_handlepacket(struct sr_instance* sr,
 	sr_ethernet_hdr_t *eth_header_in = (sr_ethernet_hdr_t*) packet;
 
 	/* Ensure the packet is actually meant for us */
-	/*if (memcmp(&(eth_header_in->ether_dhost), &(iface->addr), ETHER_ADDR_LEN))
-		return;*/
+	char bcast_addr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+	if (memcmp(&(eth_header_in->ether_dhost), &(iface->addr), ETHER_ADDR_LEN))
+		if (memcmp(&(eth_header_in->ether_dhost), bcast_addr, ETHER_ADDR_LEN))
+		return;
 
 	/* Route the packet to the appropriate handler (IP/ARP) */
 	if (eth_header_in->ether_type == htons(ethertype_ip))
-		/*handle_ip(sr, packet, len, interface);*/ return;
+		send_icmp_error(sr, packet, len, interface, 3, 0);
+		/*handle_ip(sr, packet, len, interface);*/
 	else if (eth_header_in->ether_type == htons(ethertype_arp))
 		handle_arp(sr, packet, len, interface);
 
-	/* send_icmp_error(sr, packet, len, interface, 3, 0); */
-
-	printf("returning\n");
 	return;
 }/* end sr_handlepacket */
 
@@ -129,7 +129,7 @@ void handle_arp(struct sr_instance* sr,
 
 	/* Route the packet to the appropriate handler (Req/Rep) */
 	if (arp_header_in->ar_op == htons(arp_op_reply))
-		/*handle_arp_reply(sr, packet, len, interface);*/printf("here\n"); 
+		/*handle_arp_reply(sr, packet, len, interface);*/printf("implement arp_reply\n"); 
 	else if (arp_header_in->ar_op == htons(arp_op_request))
 		handle_arp_request(sr, packet, len, interface);
 
@@ -170,11 +170,12 @@ void handle_arp_request(struct sr_instance* sr,
 		ETHER_ADDR_LEN);
 	memcpy(&(eth_header_out->ether_shost), &(iface->addr), 
 		ETHER_ADDR_LEN);
-	eth_header_out->ether_type = ethertype_ip;
+	eth_header_out->ether_type = htons(ethertype_arp);
 
+	/* ====== Body ====== */
 	/* Create the ARP packet */
 	arp_header_out->ar_hrd = htons(0x1);
-	arp_header_out->ar_pro = htons(ethertype_arp);
+	arp_header_out->ar_pro = htons(ethertype_ip);
 	arp_header_out->ar_hln = ETHER_ADDR_LEN;
 	arp_header_out->ar_pln = IP_ADDR_LEN;
 	arp_header_out->ar_op = htons(arp_op_reply);
@@ -185,11 +186,6 @@ void handle_arp_request(struct sr_instance* sr,
 
 	/* Send the packet */
 	sr_send_packet(sr, packet_out, out_len, interface);
-		packet_out[out_len] = 0;
-		int i;
-		for (i = 0; i < out_len; i++)
-			printf("%x ",*(packet_out+i));
-		printf("\n");
 
 	return;
 }
