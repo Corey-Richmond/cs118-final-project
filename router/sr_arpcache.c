@@ -30,7 +30,6 @@ void sr_arpcache_sweepreqs(struct sr_instance *sr) {
 }
 
 void sr_handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
-	printf("sr_handle_arpreq() called\n");
 	time_t curtime = time(NULL);
 	if (difftime(curtime, req->sent) < 1.0) return;
 	if (req->times_sent <= 4) {
