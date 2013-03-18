@@ -288,7 +288,7 @@ void handle_arp_reply(struct sr_instance* sr,
 		while(pack){
 			sr_ethernet_hdr_t *packet_eth_header = (sr_ethernet_hdr_t*) pack->buf;
 			memcpy(packet_eth_header->ether_dhost, mac, ETHER_ADDR_LEN);
-			memcpy(packet_eth_header->ether_shost, iface->addr, ETHER_ADDR_LEN);
+			/* memcpy(packet_eth_header->ether_shost, iface->addr, ETHER_ADDR_LEN); */
 			
 			sr_send_packet(sr, pack->buf, pack->len, pack->iface);
 
