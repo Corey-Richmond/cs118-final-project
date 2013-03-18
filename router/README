@@ -1,0 +1,88 @@
+=====================
+# Table of Contents #
+=====================
+  1 Introduction
+   .1  Version Info
+   .2  Authors
+  2 Operation
+  3 Internals
+   .1  Methodology
+   .2  Functions Implemented 
+   .3  Macros
+  4 Concluding Remarks
+   .1  Licensing
+
+================
+# Introduction #
+================
+  "sr" is a virtual router implemented in C, designed for use with the mininet
+  suite of applications. 
+
+   --------------
+  | Version Info |
+   -------------- 
+  This program is in its final stage. No further official modifications will be 
+  made by the developers.
+
+   ---------
+  | Authors |
+   ---------
+  Original sr backbone code by Stanford
+  Modifications and final version written by Michael Jennings and Steven Weiss
+
+=============
+# Operation #
+=============
+  To run this program, simply run the "sr" executable after starting up both 
+  the mininet and pox services. After that, it should automatically connect to 
+  the network.
+
+=============
+# Internals #
+=============
+   -------------
+  | Methodology |
+   -------------
+    To create this program, we looked at the call stack structure of the 
+    solution to outline the functions we would need to implement, then 
+    implemented and tested each of these functions one by one.
+
+   ----------------------
+  | Functions Implmented |
+   ----------------------
+    To ensure proper function of the program we implemented the following
+    functions:
+      * sr_router.c:
+        * sr_handle_packet - Handles all incoming packets
+        * handle_ip - Handles all incoming IP packets
+        * handle_arp - Handles all incoming ARP replies and requests
+        * handle_arp_reply - Accepts ARP replies into the ARP cache
+        * handle_arp_request - Replies to ARP requests from other hosts
+      * sr_arpcache.c:
+        * sr_arpcache_sweepreqs - Calls sr_handle_arpreq for each request
+        * sr_handle_arpreq - Sends out ARP requests for each waiting request
+      * icmp_error.c
+        * send_icmp_error - Sends errors and echo packets
+        * get_checksum_16 - Gets the checksum of a block of data
+
+   --------
+  | Macros |
+   --------
+    Though we tried to keep macros to a minimum, we did define several macros
+    for use with aligning the header structures to the packet. These can be
+    found in the following header files:
+      * sr_protocol.h
+      * sr_if.h
+      * sr_router.h
+      * net_macros.h
+      * icmp_macros.h
+
+======================
+# Concluding Remarks #
+======================
+   -----------
+  | Licensing |
+   -----------
+    All code written by Steven Weiss is public domain.
+    All code written by Michael Jennings is licensable at his discretion.
+    All code written by Stanford is licensable at their discretion.
