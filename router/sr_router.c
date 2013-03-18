@@ -95,7 +95,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
 	/* Route the packet to the appropriate handler (IP/ARP) */
 	if (eth_header_in->ether_type == htons(ethertype_ip))
-		send_icmp_error(sr, packet, len, interface, 3, 0);
+		send_icmp_error(sr, packet, len, interface, 3, 3);
 		/*handle_ip(sr, packet, len, interface);*/
 	else if (eth_header_in->ether_type == htons(ethertype_arp))
 		handle_arp(sr, packet, len, interface);

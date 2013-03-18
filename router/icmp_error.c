@@ -35,8 +35,8 @@ void send_icmp_error(struct sr_instance* sr,
 
 	/* ====== Begin ICMP Packet Construction ====== */
 	/* Create an empty packet */
+	uint8_t *packet_out = malloc(100);
 	size_t out_len = ICMP_T3_SIZE;
-	uint8_t *packet_out = malloc(out_len);
 	memset(packet_out, 0, out_len);
 
 	/* ====== Headers ====== */
@@ -55,13 +55,13 @@ void send_icmp_error(struct sr_instance* sr,
 		ETHER_ADDR_LEN);
 	memcpy(&(eth_header_out->ether_shost), &(iface->addr), 
 		ETHER_ADDR_LEN);
-	eth_header_out->ether_type = ethertype_ip;
+	eth_header_out->ether_type = htons(ethertype_ip);
 
 	/* Create the IP header */
 	ip_header_out->ip_v = 0x4;
 	ip_header_out->ip_hl = 0x5;
 	ip_header_out->ip_tos = 0x00;
-	ip_header_out->ip_off = 0x0000;
+	ip_header_out->ip_off = htons(0x0000 | IP_DF);
 	ip_header_out->ip_ttl = 0x7f;
 	ip_header_out->ip_p = ip_protocol_icmp;
 	ip_header_out->ip_sum = 0x0;
@@ -93,8 +93,8 @@ void send_icmp_error(struct sr_instance* sr,
 	}
 
 	/* Finish filling out IP header */
-	ip_header_out->ip_len = htons(out_len);
-	ip_header_out->ip_id = htons(out_len); /* TODO */
+	ip_header_out->ip_len = htons(out_len-IP_HEAD_OFF);
+	ip_header_out->ip_id = htons(out_len-IP_HEAD_OFF); /* TODO */
 
 	/* Fill in the ICMP checksum */
 	icmp_header_out->icmp_sum = 
@@ -109,6 +109,7 @@ void send_icmp_error(struct sr_instance* sr,
 	/* Send the packet */
 	/* forward_pkt(sr, packet_out, */
 	sr_send_packet(sr, packet_out, out_len, interface);
+		printf("%d\n\n",out_len);
 		packet_out[out_len] = 0;
 		int i;
 		for (i = 0; i < out_len; i++)
