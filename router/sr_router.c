@@ -224,7 +224,7 @@ void handle_arp(struct sr_instance* sr,
 
 	/* Route the packet to the appropriate handler (Req/Rep) */
 	if (arp_header_in->ar_op == htons(arp_op_reply))
-		/*handle_arp_reply(sr, packet, len, interface);*/printf("implement arp_reply\n"); 
+		handle_arp_reply(sr, packet, len, interface);
 	else if (arp_header_in->ar_op == htons(arp_op_request))
 		handle_arp_request(sr, packet, len, interface);
 
@@ -248,6 +248,7 @@ void handle_arp_reply(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */)
 {
+	printf("handle_arp_reply() called\n");
 	
 	struct sr_if* iface = sr_get_interface(sr, interface);
 
