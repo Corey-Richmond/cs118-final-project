@@ -91,8 +91,8 @@ void sr_handlepacket(struct sr_instance* sr,
 
 	/* Ensure the packet is actually meant for us */
 	char bcast_addr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-	if (memcmp(&(eth_header_in->ether_dhost), &(iface->addr), ETHER_ADDR_LEN))
-		if (memcmp(&(eth_header_in->ether_dhost), bcast_addr, ETHER_ADDR_LEN))
+	if (memcmp(eth_header_in->ether_dhost, iface->addr, ETHER_ADDR_LEN))
+		if (memcmp(eth_header_in->ether_dhost, bcast_addr, ETHER_ADDR_LEN))
 		;
 
 	/* Route the packet to the appropriate handler (IP/ARP) */
@@ -186,7 +186,7 @@ void handle_ip(struct sr_instance* sr,
 	struct sr_if *best_iface = sr_get_interface(sr, best_match_iface);
 
 	sr_ethernet_hdr_t *eth_header_out = (sr_ethernet_hdr_t*) packet;
-	memcpy(eth_header_out->ether_shost, &(best_iface->addr), ETHER_ADDR_LEN);
+	memcpy(eth_header_out->ether_shost, best_iface->addr, ETHER_ADDR_LEN);
 	
 	/* DECREMENT TTL */
 	ip_header_in->ip_ttl--;
@@ -194,7 +194,7 @@ void handle_ip(struct sr_instance* sr,
 	struct sr_arpentry *addr;
 	if((addr = sr_arpcache_lookup(&(sr->cache), dest))){
 		memcpy(eth_header_out->ether_dhost, addr->mac, ETHER_ADDR_LEN);
-		memcpy(eth_header_out->ether_shost, &(iface->addr), ETHER_ADDR_LEN);
+		memcpy(eth_header_out->ether_shost, best_iface->addr, ETHER_ADDR_LEN);
 		sr_send_packet(sr, packet, len, best_match_iface);
 	} else {
 		sr_arpcache_queuereq(&(sr->cache), best_match_gw, packet, len, best_match_iface);
@@ -283,7 +283,7 @@ void handle_arp_reply(struct sr_instance* sr,
 		while(pack){
 			sr_ethernet_hdr_t *packet_eth_header = (sr_ethernet_hdr_t*) pack->buf;
 			memcpy(packet_eth_header->ether_dhost, mac, ETHER_ADDR_LEN);
-			memcpy(packet_eth_header->ether_shost, &(iface->addr), ETHER_ADDR_LEN);
+			memcpy(packet_eth_header->ether_shost, iface->addr, ETHER_ADDR_LEN);
 			
 			sr_send_packet(sr, pack->buf, pack->len, pack->iface);
 
@@ -340,9 +340,9 @@ void handle_arp_request(struct sr_instance* sr,
 	arp_header_out->ar_hln = ETHER_ADDR_LEN;
 	arp_header_out->ar_pln = IP_ADDR_LEN;
 	arp_header_out->ar_op = htons(arp_op_reply);
-	memcpy(&(arp_header_out->ar_sha), &(iface->addr), ETHER_ADDR_LEN);
+	memcpy(arp_header_out->ar_sha, iface->addr, ETHER_ADDR_LEN);
 	arp_header_out->ar_sip = iface->ip;
-	memcpy(&(arp_header_out->ar_tha), &(arp_header_in->ar_sha), ETHER_ADDR_LEN);
+	memcpy(arp_header_out->ar_tha, arp_header_in->ar_sha, ETHER_ADDR_LEN);
 	arp_header_out->ar_tip = arp_header_in->ar_sip;
 
 	/* Send the packet */
