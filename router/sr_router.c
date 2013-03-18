@@ -16,7 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "steve_macros.h"
+#include "net_macros.h"
 #include "eth_macros.h"
 #include "sr_if.h"
 #include "sr_rt.h"
