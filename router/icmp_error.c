@@ -46,9 +46,9 @@ void send_icmp_error(struct sr_instance* sr,
 	sr_ip_hdr_t *ip_header_out = (sr_ip_hdr_t*) (packet_out + IP_HEAD_OFF);
 	sr_ip_hdr_t *ip_header_in = (sr_ip_hdr_t*) (packet + IP_HEAD_OFF);
 	sr_icmp_hdr_t *icmp_header_out = 
-			(sr_icmp_hdr_t*) (packet_out + IP_DATA_OFF);
+			(sr_icmp_hdr_t*) (packet_out + ICMP_HEAD_OFF);
 	/* sr_icmp_hdr_t *icmp_header_in = 
-			(sr_icmp_hdr_t*) (packet + IP_DATA_OFF); */
+			(sr_icmp_hdr_t*) (packet + ICMP_HEAD_OFF); */
 
 	/* Create the ethernet header */
 	memcpy(&(eth_header_out->ether_dhost), &(eth_header_in->ether_shost), 
@@ -77,8 +77,8 @@ void send_icmp_error(struct sr_instance* sr,
 	/* For echo type, copy over the data. */
 	/* TODO: Test echo */
 	if (type == 0x0) { 
-		memcpy(packet_out+ICMP_DATA_OFF, 
-				packet+ICMP_DATA_OFF, len-ICMP_DATA_OFF);
+		memcpy(packet_out+ICMP_HEAD_OFF+4, 
+				packet+ICMP_HEAD_OFF+4, len-ICMP_HEAD_OFF-4);
 		out_len = len;
 	}
 
