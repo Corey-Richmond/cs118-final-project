@@ -176,17 +176,21 @@ void handle_ip(struct sr_instance* sr,
 		return;
 	}
 
+	/* Get the iface of the best match */
+	struct sr_if *best_iface = sr_get_interface(sr, best_match_iface);
+
 	sr_ethernet_hdr_t *eth_header_out = (sr_ethernet_hdr_t*) packet;
-	memcpy(eth_header_out->ether_shost, iface->addr, ETHER_ADDR_LEN);
+	memcpy(eth_header_out->ether_shost, &(best_iface->addr), ETHER_ADDR_LEN);
 	
 	/* DECREMENT TTL */ 
 
 	struct sr_arpentry *addr;
 	if((addr = sr_arpcache_lookup(&(sr->cache), dest))){
 		memcpy(eth_header_out->ether_dhost, addr->mac, ETHER_ADDR_LEN);
-		sr_send_packet(sr, packet, len, interface);
+		memcpy(eth_header_out->ether_shost, &(iface->addr), ETHER_ADDR_LEN);
+		sr_send_packet(sr, packet, len, best_match_iface);
 	} else {
-		sr_arpcache_queuereq(&(sr->cache), best_match_gw, packet, len, interface);
+		sr_arpcache_queuereq(&(sr->cache), best_match_gw, packet, len, best_match_iface);
 	}
 
 	return;
@@ -272,6 +276,7 @@ void handle_arp_reply(struct sr_instance* sr,
 		while(pack){
 			sr_ethernet_hdr_t *packet_eth_header = (sr_ethernet_hdr_t*) pack->buf;
 			memcpy(packet_eth_header->ether_dhost, mac, ETHER_ADDR_LEN);
+			memcpy(packet_eth_header->ether_shost, &(iface->addr), ETHER_ADDR_LEN);
 			
 			sr_send_packet(sr, pack->buf, pack->len, pack->iface);
 

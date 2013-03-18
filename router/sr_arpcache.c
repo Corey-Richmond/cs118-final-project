@@ -9,6 +9,7 @@
 #include "sr_arpcache.h"
 #include "sr_router.h"
 #include "sr_if.h"
+#include "sr_rt.h"
 #include "sr_protocol.h"
 #include "icmp_error.h"
 
@@ -18,6 +19,7 @@
   See the comments in the header file for an idea of what it should look like.
 */
 void sr_arpcache_sweepreqs(struct sr_instance *sr) { 
+	printf("sr_arpcache_sweepreqs() called\n");
 	struct sr_arpreq *req = sr->cache.requests;
 	while (req) {
 		struct sr_arpreq *next = req->next;
@@ -29,6 +31,7 @@ void sr_arpcache_sweepreqs(struct sr_instance *sr) {
 }
 
 void sr_handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
+	printf("sr_handle_arpreq() called\n");
 	time_t curtime = time(NULL);
 	if (difftime(curtime, req->sent) < 1.0) return;
 	if (req->times_sent <= 4) {
