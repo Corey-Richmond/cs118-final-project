@@ -327,9 +327,9 @@ void handle_arp_request(struct sr_instance* sr,
 
 
 	/* Create the ethernet header */
-	memcpy(&(eth_header_out->ether_dhost), &(eth_header_in->ether_shost), 
+	memcpy(eth_header_out->ether_dhost, eth_header_in->ether_shost, 
 		ETHER_ADDR_LEN);
-	memcpy(&(eth_header_out->ether_shost), &(iface->addr), 
+	memcpy(eth_header_out->ether_shost, iface->addr, 
 		ETHER_ADDR_LEN);
 	eth_header_out->ether_type = htons(ethertype_arp);
 
