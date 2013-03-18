@@ -17,7 +17,19 @@
   See the comments in the header file for an idea of what it should look like.
 */
 void sr_arpcache_sweepreqs(struct sr_instance *sr) { 
-    /* Fill this in */
+	struct sr_arpreq *req = sr->cache.requests;
+	while (req) {
+		struct sr_arpreq *next = req->next;
+		sr_handle_arpreq(sr, req);
+		req = next;
+	}
+
+	return;
+}
+
+void sr_handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
+	printf("PANIC\n");
+	return;
 }
 
 /* You should not need to touch the rest of this code. */
