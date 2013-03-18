@@ -127,11 +127,66 @@ void handle_arp(struct sr_instance* sr,
 	sr_ethernet_hdr_t *eth_header_in = (sr_ethernet_hdr_t*) packet;
 	sr_arp_hdr_t *arp_header_in = (sr_arp_hdr_t*) (packet + ARP_HEAD_OFF);
 
+	if(arp_header_in->ar_tip != iface->ip){
+		return;
+	}
+
 	/* Route the packet to the appropriate handler (Req/Rep) */
 	if (arp_header_in->ar_op == htons(arp_op_reply))
 		/*handle_arp_reply(sr, packet, len, interface);*/printf("implement arp_reply\n"); 
 	else if (arp_header_in->ar_op == htons(arp_op_request))
 		handle_arp_request(sr, packet, len, interface);
+
+	return;
+}
+
+
+/*---------------------------------------------------------------------
+ * Method: handle_arp_reply
+ * Scope:  Global
+ * 
+ * This method is called each time the router receives an ARP reply on 
+ * the interface.  The packet buffer, the packet length and receiving
+ * interface are passed in as parameters. The packet is complete with
+ * ethernet headers.
+ *
+ *---------------------------------------------------------------------*/
+
+void handle_arp_reply(struct sr_instance* sr,
+        uint8_t * packet/* lent */,
+        unsigned int len,
+        char* interface/* lent */)
+{
+	
+	struct sr_if* iface = sr_get_interface(sr, interface);
+
+	/* ====== Headers ====== */
+	/* Allow easy access to the headers */
+	sr_ethernet_hdr_t *eth_header_in = (sr_ethernet_hdr_t*) packet;
+	sr_arp_hdr_t *arp_header_in = (sr_arp_hdr_t*) (packet + ARP_HEAD_OFF);
+
+	uint32_t ip = arp_header_in->sip;
+	char mac[ETHER_ADDR_LEN];
+	
+	memcpy(mac, arp_header_in->ar_sha, ETHER_ADDR_LEN);
+
+	struct sr_arpreq* req = sr_arpcache_insert(&(sr->cache), mac, ip);
+
+	if(!req){
+		//this IP was not in the request queue
+	} else {
+		struct sr_packet* pack = req->packets;
+		while(pack){
+			sr_ethernet_hdr_t *packet_eth_header = (sr_ethernet_hdr_t*) pack->buf;
+			memcpy(packet_eth_header->ether_dhost, mac, ETHER_ADDR_LEN);
+			
+			sr_send_packet(sr, pack->buf, pack->len, pack->iface);
+
+			pack = pack->next;
+		}
+
+		sr_arpreq_destroy(&(sr->cache), req);
+	}
 
 	return;
 }
@@ -165,10 +220,6 @@ void handle_arp_request(struct sr_instance* sr,
 	sr_arp_hdr_t *arp_header_out = (sr_arp_hdr_t*) (packet_out + ARP_HEAD_OFF);
 	sr_arp_hdr_t *arp_header_in = (sr_arp_hdr_t*) (packet + ARP_HEAD_OFF);
 
-
-	if(arp_header_in->ar_tip != iface->ip){
-		return;
-	}
 
 	/* Create the ethernet header */
 	memcpy(&(eth_header_out->ether_dhost), &(eth_header_in->ether_shost), 
