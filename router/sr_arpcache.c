@@ -19,7 +19,6 @@
   See the comments in the header file for an idea of what it should look like.
 */
 void sr_arpcache_sweepreqs(struct sr_instance *sr) { 
-	printf("sr_arpcache_sweepreqs() called\n");
 	struct sr_arpreq *req = sr->cache.requests;
 	while (req) {
 		struct sr_arpreq *next = req->next;
@@ -51,9 +50,9 @@ void sr_handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
 
 		/* Create the ethernet header */
 		char bcast_addr[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-		memcpy(&(eth_header_out->ether_dhost), &(bcast_addr), 
+		memcpy(eth_header_out->ether_dhost, bcast_addr, 
 				ETHER_ADDR_LEN);
-		memcpy(&(eth_header_out->ether_shost), &(iface->addr), 
+		memcpy(eth_header_out->ether_shost, iface->addr, 
 				ETHER_ADDR_LEN);
 		eth_header_out->ether_type = htons(ethertype_arp);
 
@@ -64,11 +63,11 @@ void sr_handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
 		arp_header_out->ar_hln = ETHER_ADDR_LEN;
 		arp_header_out->ar_pln = IP_ADDR_LEN;
 		arp_header_out->ar_op = htons(arp_op_request);
-		memcpy(&(arp_header_out->ar_sha), &(iface->addr), ETHER_ADDR_LEN);
+		memcpy(arp_header_out->ar_sha, iface->addr, ETHER_ADDR_LEN);
 		arp_header_out->ar_sip = iface->ip;
 		char zeroes[] = {0,0,0,0,0,0};
-		memcpy(&(arp_header_out->ar_tha), 
-				&(zeroes), ETHER_ADDR_LEN);
+		memcpy(arp_header_out->ar_tha, 
+				zeroes, ETHER_ADDR_LEN);
 		arp_header_out->ar_tip = req->ip;
 
 		/* Send the packet */

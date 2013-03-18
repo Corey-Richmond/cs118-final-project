@@ -25,6 +25,7 @@
 #include "sr_arpcache.h"
 #include "sr_utils.h"
 #include "icmp_error.h"
+#include "checksum_utils.h"
 
 /*---------------------------------------------------------------------
  * Method: sr_init(void)
@@ -191,11 +192,17 @@ void handle_ip(struct sr_instance* sr,
 	/* DECREMENT TTL */
 	ip_header_in->ip_ttl--;
 
+	/* Fill in the IP checksum */
+	ip_header_in->ip_sum = 0x0;
+	ip_header_in->ip_sum = 
+			get_checksum_16(packet+IP_HEAD_OFF, len-IP_HEAD_OFF);
+
 	struct sr_arpentry *addr;
 	if((addr = sr_arpcache_lookup(&(sr->cache), dest))){
 		memcpy(eth_header_out->ether_dhost, addr->mac, ETHER_ADDR_LEN);
 		memcpy(eth_header_out->ether_shost, best_iface->addr, ETHER_ADDR_LEN);
 		sr_send_packet(sr, packet, len, best_match_iface);
+		printf("Sent packet on interface %s\n", best_match_iface);
 	} else {
 		sr_arpcache_queuereq(&(sr->cache), best_match_gw, packet, len, best_match_iface);
 	}
@@ -226,7 +233,6 @@ void handle_arp(struct sr_instance* sr,
 	struct sr_if* iface = sr_get_interface(sr, interface);
 
 	/* Allow easy access to the headers */
-	sr_ethernet_hdr_t *eth_header_in = (sr_ethernet_hdr_t*) packet;
 	sr_arp_hdr_t *arp_header_in = (sr_arp_hdr_t*) (packet + ARP_HEAD_OFF);
 
 	if(arp_header_in->ar_tip != iface->ip){
@@ -265,7 +271,6 @@ void handle_arp_reply(struct sr_instance* sr,
 
 	/* ====== Headers ====== */
 	/* Allow easy access to the headers */
-	sr_ethernet_hdr_t *eth_header_in = (sr_ethernet_hdr_t*) packet;
 	sr_arp_hdr_t *arp_header_in = (sr_arp_hdr_t*) (packet + ARP_HEAD_OFF);
 
 	uint32_t ip = arp_header_in->ar_sip;
