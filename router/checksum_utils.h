@@ -28,7 +28,6 @@ uint32_t get_checksum_32(const void *_data, int len) {
   case 0:
     sum += data[0] << 24;
     break;
-  default:
   }
   while (sum > 0xffffffff)
     sum = (sum >> 32) + (sum & 0xffffffff);

@@ -109,7 +109,6 @@ void send_icmp_error(struct sr_instance* sr,
 	/* Send the packet */
 	/* forward_pkt(sr, packet_out, */
 	sr_send_packet(sr, packet_out, out_len, interface);
-		printf("%d\n\n",out_len);
 		packet_out[out_len] = 0;
 		int i;
 		for (i = 0; i < out_len; i++)
