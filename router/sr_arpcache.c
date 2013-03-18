@@ -10,6 +10,7 @@
 #include "sr_router.h"
 #include "sr_if.h"
 #include "sr_protocol.h"
+#include "icmp_error.h"
 
 /* 
   This function gets called every second. For each request sent out, we keep
@@ -28,7 +29,61 @@ void sr_arpcache_sweepreqs(struct sr_instance *sr) {
 }
 
 void sr_handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req) {
-	printf("PANIC\n");
+	time_t curtime = time(NULL);
+	if (difftime(curtime, req->sent) < 1.0) return;
+	if (req->times_sent <= 4) {
+		/* Find out which interface it's on */
+		char *interface = req->packets->iface;
+		struct sr_if* iface = sr_get_interface(sr, interface);
+
+		/* Allocate a new packet */
+		size_t out_len = ARP_REPLY_SIZE;
+		uint8_t *packet_out = malloc(out_len);
+
+		/* ====== Headers ====== */
+		/* Allow easy access to the headers */
+		sr_ethernet_hdr_t *eth_header_out = (sr_ethernet_hdr_t*) packet_out;
+		sr_arp_hdr_t *arp_header_out = 
+				(sr_arp_hdr_t*) (packet_out + ARP_HEAD_OFF);
+
+		/* Create the ethernet header */
+		char bcast_addr[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+		memcpy(&(eth_header_out->ether_dhost), &(bcast_addr), 
+				ETHER_ADDR_LEN);
+		memcpy(&(eth_header_out->ether_shost), &(iface->addr), 
+				ETHER_ADDR_LEN);
+		eth_header_out->ether_type = htons(ethertype_arp);
+
+		/* ====== Body ====== */
+		/* Create the ARP packet */
+		arp_header_out->ar_hrd = htons(0x1);
+		arp_header_out->ar_pro = htons(ethertype_ip);
+		arp_header_out->ar_hln = ETHER_ADDR_LEN;
+		arp_header_out->ar_pln = IP_ADDR_LEN;
+		arp_header_out->ar_op = htons(arp_op_request);
+		memcpy(&(arp_header_out->ar_sha), &(iface->addr), ETHER_ADDR_LEN);
+		arp_header_out->ar_sip = iface->ip;
+		char zeroes[] = {0,0,0,0,0,0};
+		memcpy(&(arp_header_out->ar_tha), 
+				&(zeroes), ETHER_ADDR_LEN);
+		arp_header_out->ar_tip = req->ip;
+
+		/* Send the packet */
+		sr_send_packet(sr, packet_out, out_len, interface);
+
+		free(packet_out);
+
+		return;
+	} else {
+		struct sr_packet *packet = req->packets;
+		while (packet) {
+			struct sr_packet *next = packet->next;
+			send_icmp_error(sr, packet->buf, packet->len, packet->iface, 3, 1);
+			packet = next;
+		}
+		sr_arpreq_destroy(&(sr->cache), req);
+	}
+
 	return;
 }
 
