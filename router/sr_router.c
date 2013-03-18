@@ -13,6 +13,8 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "steve_macros.h"
 #include "eth_macros.h"
@@ -165,15 +167,16 @@ void handle_arp_reply(struct sr_instance* sr,
 	sr_ethernet_hdr_t *eth_header_in = (sr_ethernet_hdr_t*) packet;
 	sr_arp_hdr_t *arp_header_in = (sr_arp_hdr_t*) (packet + ARP_HEAD_OFF);
 
-	uint32_t ip = arp_header_in->sip;
-	char mac[ETHER_ADDR_LEN];
+	uint32_t ip = arp_header_in->ar_sip;
+	unsigned char mac[ETHER_ADDR_LEN];
 	
 	memcpy(mac, arp_header_in->ar_sha, ETHER_ADDR_LEN);
 
 	struct sr_arpreq* req = sr_arpcache_insert(&(sr->cache), mac, ip);
 
 	if(!req){
-		//this IP was not in the request queue
+		return;
+		/* this IP was not in the request queue */
 	} else {
 		struct sr_packet* pack = req->packets;
 		while(pack){
