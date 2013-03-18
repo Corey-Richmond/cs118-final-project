@@ -1,0 +1,5 @@
+Michael Jennings wrote sr_handle_ip and sr_handle_arp_reply.
+
+Steven Weiss wrote sr_handle_packet, sr_handle_arp,
+sr_handle_arp_request, sr_arpcache_sweepreqs, and
+send_icmp_error.
