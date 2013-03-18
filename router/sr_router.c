@@ -145,6 +145,12 @@ void handle_ip(struct sr_instance* sr,
 		return;
 	}
 
+	/* send error if ttl is 0 */
+	if(ip_header_in->ip_ttl == 0){
+		send_icmp_error(sr, packet, len, interface, 11, 0);
+		return;
+	}
+
 	struct sr_rt* rt = sr->routing_table;
 
 	int num_matching = 0;
@@ -182,7 +188,8 @@ void handle_ip(struct sr_instance* sr,
 	sr_ethernet_hdr_t *eth_header_out = (sr_ethernet_hdr_t*) packet;
 	memcpy(eth_header_out->ether_shost, &(best_iface->addr), ETHER_ADDR_LEN);
 	
-	/* DECREMENT TTL */ 
+	/* DECREMENT TTL */
+	ip_header_in->ip_ttl--;
 
 	struct sr_arpentry *addr;
 	if((addr = sr_arpcache_lookup(&(sr->cache), dest))){
