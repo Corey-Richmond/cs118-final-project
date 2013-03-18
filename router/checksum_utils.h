@@ -1,6 +1,3 @@
-const uint16_t CRC16 = 0x8005;
-const uint32_t CRC32 = 0x04C11DB7;
-
 uint16_t get_checksum_16(const void *_data, int len) {
   const uint8_t *data = _data;
   uint32_t sum;
@@ -15,58 +12,27 @@ uint16_t get_checksum_16(const void *_data, int len) {
   return sum ? sum : 0xffff;
 }
 
-uint32_t get_checksum_32(uint8_t *data, int size) {
-	printf("in32\n");
-	uint32_t out = 0;
-	int bits_read = 0, bit_flag;
+uint32_t get_checksum_32(const void *_data, int len) {
+  const uint8_t *data = _data;
+  uint64_t sum;
 
-	/* Sanity check: */
-	if(data == NULL)
-		return 0;
-
-	printf("in\n");
-	while(size > 0)
-	{
-		bit_flag = out >> 31;
-
-		/* Get next bit */
-		out <<= 1;
-		out |= (*data >> bits_read) & 1; 
-
-		/* Increment bit counter */
-		bits_read++;
-		if(bits_read > 7)
-		{
-			bits_read = 0;
-			data++;
-			size--;
-		}
-
-		/* Cycle check */
-		if(bit_flag)
-			out ^= CRC32;
-
-	}
-
-	/* Push out last 32 bits */
-	uint32_t i;
-	printf("in\n");
-	for (i = 0; i < 32; ++i) {
-		bit_flag = out >> 31;
-		out <<= 1;
-		if(bit_flag)
-			out ^= CRC32;
-	}
-
-	/* Reverse the bits */
-	printf("in\n");
-	uint32_t crc = 0;
-	i = 0x80000000;
-	uint32_t j = 0x00000001;
-	for (; i != 0; i >>=1, j <<= 1) {
-		if (i & out) crc |= j;
-	}
-
-	return crc;
+  for (sum = 0;len >= 4; data += 4, len -= 4)
+    sum += data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3];
+  switch (len) {
+  case 2:
+    sum += data[0] << 24 | data[1] << 16 | data[2] << 8;
+    break;
+  case 1:
+    sum += data[0] << 24 | data[1] << 16;
+    break;
+  case 0:
+    sum += data[0] << 24;
+    break;
+  default:
+  }
+  while (sum > 0xffffffff)
+    sum = (sum >> 32) + (sum & 0xffffffff);
+  sum = htons (~sum);
+  return sum ? sum : 0xffffffff;
 }
 
