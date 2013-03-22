@@ -84,10 +84,7 @@ void sr_handlepacket(struct sr_instance* sr,
 	assert(interface);
 	assert(iface);
 
-	/* Debug */
-	printf("*** -> Received packet of length %d \n",len);
-
-	/* Allow easy access to the ethernet headers */
+	/* Allow easy access to the headers */
 	sr_ethernet_hdr_t *eth_header_in = (sr_ethernet_hdr_t*) packet;
 
 	/* Ensure the packet is actually meant for us */
@@ -122,7 +119,6 @@ void handle_ip(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */)
 {
-	printf("handle_ip() called\n");
 	struct sr_if* iface = sr_get_interface(sr, interface);
 
 	sr_ip_hdr_t *ip_header_in = (sr_ip_hdr_t*) (packet + IP_HEAD_OFF);
@@ -203,7 +199,6 @@ void handle_ip(struct sr_instance* sr,
 		memcpy(eth_header_out->ether_dhost, addr->mac, ETHER_ADDR_LEN);
 		memcpy(eth_header_out->ether_shost, best_iface->addr, ETHER_ADDR_LEN);
 		sr_send_packet(sr, packet, len, best_match_iface);
-		printf("Sent packet on interface %s\n", best_match_iface);
 	} else {
 		sr_arpcache_queuereq(&(sr->cache), best_match_gw, packet, len, best_match_iface);
 	}
@@ -229,8 +224,6 @@ void handle_arp(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */)
 {
-	printf("handle_arp() called\n");
-	
 	struct sr_if* iface = sr_get_interface(sr, interface);
 
 	/* Allow easy access to the headers */
@@ -266,8 +259,6 @@ void handle_arp_reply(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */)
 {
-	printf("handle_arp_reply() called\n");
-	
 	struct sr_if* iface = sr_get_interface(sr, interface);
 
 	/* ====== Headers ====== */
@@ -317,7 +308,6 @@ void handle_arp_request(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */)
 {
-	printf("handle_arp_request() called\n");
 	struct sr_if* iface = sr_get_interface(sr, interface);
 
 	/* Allocate a new packet */
