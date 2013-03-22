@@ -165,6 +165,11 @@ void handle_arp_request(struct sr_instance* sr,
 	sr_arp_hdr_t *arp_header_out = (sr_arp_hdr_t*) (packet_out + ARP_HEAD_OFF);
 	sr_arp_hdr_t *arp_header_in = (sr_arp_hdr_t*) (packet + ARP_HEAD_OFF);
 
+
+	if(arp_header_in->ar_tip != iface->ip){
+		return;
+	}
+
 	/* Create the ethernet header */
 	memcpy(&(eth_header_out->ether_dhost), &(eth_header_in->ether_shost), 
 		ETHER_ADDR_LEN);
