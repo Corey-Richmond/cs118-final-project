@@ -129,6 +129,12 @@ void handle_ip(struct sr_instance* sr,
 	
 	uint32_t dest = ip_header_in->ip_dst;
 
+	/* send error if ttl is 0 */
+	if(ip_header_in->ip_ttl == 0){
+		send_icmp_error(sr, packet, len, interface, 11, 0);
+		return;
+	}
+
 	/* If it's for us, remind sender not to bother us */
 	if (dest == iface->ip) {
 		/* Pretend we can't be reached for most */
@@ -146,11 +152,6 @@ void handle_ip(struct sr_instance* sr,
 		return;
 	}
 
-	/* send error if ttl is 0 */
-	if(ip_header_in->ip_ttl == 0){
-		send_icmp_error(sr, packet, len, interface, 11, 0);
-		return;
-	}
 
 	struct sr_rt* rt = sr->routing_table;
 
