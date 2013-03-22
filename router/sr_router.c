@@ -130,7 +130,7 @@ void handle_ip(struct sr_instance* sr,
 	uint32_t dest = ip_header_in->ip_dst;
 
 	/* send error if ttl is 0 */
-	if(ip_header_in->ip_ttl == 0){
+	if(ip_header_in->ip_ttl <= 1){
 		send_icmp_error(sr, packet, len, interface, 11, 0);
 		return;
 	}
@@ -196,7 +196,7 @@ void handle_ip(struct sr_instance* sr,
 	/* Fill in the IP checksum */
 	ip_header_in->ip_sum = 0x0;
 	ip_header_in->ip_sum = 
-			get_checksum_16(packet+IP_HEAD_OFF, len-IP_HEAD_OFF);
+			get_checksum_16(packet+IP_HEAD_OFF, IP_HEAD_SIZE);
 
 	struct sr_arpentry *addr;
 	if((addr = sr_arpcache_lookup(&(sr->cache), dest))){
@@ -317,6 +317,7 @@ void handle_arp_request(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */)
 {
+	printf("handle_arp_request() called\n");
 	struct sr_if* iface = sr_get_interface(sr, interface);
 
 	/* Allocate a new packet */

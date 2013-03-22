@@ -77,6 +77,7 @@
 #define ICMP_DATA_SIZE 28
 
 #define IP_HEAD_OFF 14
+#define IP_HEAD_SIZE 20
 #define ARP_HEAD_OFF 14
 #define IP_DATA_OFF 34
 #define ICMP_HEAD_OFF IP_DATA_OFF
