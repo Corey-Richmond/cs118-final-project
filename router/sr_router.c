@@ -93,12 +93,11 @@ void sr_handlepacket(struct sr_instance* sr,
 	char bcast_addr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 	if (memcmp(&(eth_header_in->ether_dhost), &(iface->addr), ETHER_ADDR_LEN))
 		if (memcmp(&(eth_header_in->ether_dhost), bcast_addr, ETHER_ADDR_LEN))
-		return;
+		;
 
 	/* Route the packet to the appropriate handler (IP/ARP) */
 	if (eth_header_in->ether_type == htons(ethertype_ip))
-		send_icmp_error(sr, packet, len, interface, 3, 3);
-		/*handle_ip(sr, packet, len, interface);*/
+		handle_ip(sr, packet, len, interface);
 	else if (eth_header_in->ether_type == htons(ethertype_arp))
 		handle_arp(sr, packet, len, interface);
 
@@ -122,13 +121,29 @@ void handle_ip(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */)
 {
-	struct sr_if *iface = sr_get_interface(sr, interface);
+	printf("handle_ip() called\n");
+	struct sr_if* iface = sr_get_interface(sr, interface);
 
 	sr_ip_hdr_t *ip_header_in = (sr_ip_hdr_t*) (packet + IP_HEAD_OFF);
 	
 	uint32_t dest = ip_header_in->ip_dst;
 
-	/* TODO */
+	/* If it's for us, remind sender not to bother us */
+	if (dest == iface->ip) {
+		/* Pretend we can't be reached for most */
+		if (ip_header_in->ip_p > 0x1)
+			send_icmp_error(sr, packet, len, interface, 3, 3);
+		/* ... but echo all echo packets */
+		else {
+			sr_icmp_hdr_t *icmp_header_in = 
+					(sr_icmp_hdr_t*) (packet + ICMP_HEAD_OFF);
+			if (icmp_header_in->icmp_type == 0x8 
+					&& icmp_header_in->icmp_code == 0x0) {
+				send_icmp_error(sr, packet, len, interface, 0, 0);
+			}
+		}
+		return;
+	}
 
 	struct sr_rt* rt = sr->routing_table;
 
@@ -195,6 +210,7 @@ void handle_arp(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */)
 {
+	printf("handle_arp() called\n");
 	
 	struct sr_if* iface = sr_get_interface(sr, interface);
 
