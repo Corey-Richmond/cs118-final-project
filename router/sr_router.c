@@ -130,13 +130,13 @@ void handle_ip(struct sr_instance* sr,
 
 	struct sr_rt* rt = sr->routing_table;
 
-	uint32_t num_matching = 0;
+	int num_matching = 0;
 	uint32_t best_match_gw = 0;
 	char best_match_iface[sr_IFACE_NAMELEN];
 
 	while(rt){
-		if(!((rt->dest.s_b1 ^ dest) & rt->mask.s_b1 & dest)){
-			uint32_t a = !(rt->mask->S_addr);
+		if(!((rt->dest ^ dest) & rt->mask)){
+			uint32_t a = !(rt->mask);
 			a++;
 			int match = 0;
 			while(a != 1){
@@ -146,7 +146,7 @@ void handle_ip(struct sr_instance* sr,
 			match = 32 - match;
 			if(match > num_matching){
 				num_matching = match;
-				best_match_gw = rt->gw.S_un.S_addr;
+				best_match_gw = rt->gw;
 				memcpy(best_match_iface, rt->interface, sr_IFACE_NAMELEN);
 			}
 		}
@@ -155,6 +155,12 @@ void handle_ip(struct sr_instance* sr,
 	
 	if(num_matching == 0){
 		/* ERROR */
+	}
+
+	if(!(best_match_gw & dest)){
+		/* DEST ON LOCAL NETWORK */
+	} else {
+		/* SEND TO ANOTHER ROUTER */
 	}
 
 }
