@@ -122,11 +122,11 @@ void handle_ip(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */)
 {
+	struct sr_if *iface = sr_get_interface(sr, interface);
 
 	sr_ip_hdr_t *ip_header_in = (sr_ip_hdr_t*) (packet + IP_HEAD_OFF);
 	
 	uint32_t dest = ip_header_in->ip_dst;
-	uint32_t src = ip_header_in->ip_src;
 
 	/* TODO */
 
@@ -137,8 +137,9 @@ void handle_ip(struct sr_instance* sr,
 	char best_match_iface[sr_IFACE_NAMELEN];
 
 	while(rt){
-		if(!((rt->dest ^ dest) & rt->mask)){
-			uint32_t a = !(rt->mask);
+	
+		if(!((( rt->dest.s_addr) ^ dest) & (rt->mask.s_addr))){
+			uint32_t a = !(rt->mask.s_addr);
 			a++;
 			int match = 0;
 			while(a != 1){
@@ -148,7 +149,7 @@ void handle_ip(struct sr_instance* sr,
 			match = 32 - match;
 			if(match > num_matching){
 				num_matching = match;
-				best_match_gw = rt->gw;
+				best_match_gw =  rt->gw.s_addr;
 				memcpy(best_match_iface, rt->interface, sr_IFACE_NAMELEN);
 			}
 		}
@@ -157,13 +158,23 @@ void handle_ip(struct sr_instance* sr,
 	
 	if(num_matching == 0){
 		send_icmp_error(sr, packet, len, interface, 3, 0);
+		return;
 	}
 
-	if(!(best_match_gw & dest)){
+	sr_ethernet_hdr_t *eth_header_out = (sr_ethernet_hdr_t*) packet;
+	memcpy(eth_header_out->ether_shost, iface->addr, ETHER_ADDR_LEN);
+	
+	/* DECREMENT TTL */ 
 
+	struct sr_arpentry *addr;
+	if((addr = sr_arpcache_lookup(&(sr->cache), dest))){
+		memcpy(eth_header_out->ether_dhost, addr->mac, ETHER_ADDR_LEN);
+		sr_send_packet(sr, packet, len, interface);
 	} else {
-		
+		sr_arpcache_queuereq(&(sr->cache), best_match_gw, packet, len, interface);
 	}
+
+	return;
 
 }
 
