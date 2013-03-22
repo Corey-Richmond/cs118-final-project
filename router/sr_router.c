@@ -107,6 +107,60 @@ void sr_handlepacket(struct sr_instance* sr,
 
 
 /*---------------------------------------------------------------------
+ * Method: handle_ip
+ * Scope:  Global
+ *
+ * This method is called each time the router receives an IP packet on 
+ * the interface.  The packet buffer, the packet length and receiving
+ * interface are passed in as parameters. The packet is complete with
+ * ethernet headers.
+ *
+ *---------------------------------------------------------------------*/
+
+void handle_ip(struct sr_instance* sr,
+        uint8_t * packet/* lent */,
+        unsigned int len,
+        char* interface/* lent */)
+{
+
+	sr_ip_hdr_t *ip_header_in = (sr_ip_hdr_t*) (packet + IP_HEAD_OFF);
+	
+	uint32_t dest = ip_header_in->ip_dst;
+	uint32_t src = ip_header_in->ip_src;
+
+	struct sr_rt* rt = sr->routing_table;
+
+	uint32_t num_matching = 0;
+	uint32_t best_match_gw = 0;
+	char best_match_iface[sr_IFACE_NAMELEN];
+
+	while(rt){
+		if(!((rt->dest.s_b1 ^ dest) & rt->mask.s_b1 & dest)){
+			uint32_t a = !(rt->mask->S_addr);
+			a++;
+			int match = 0;
+			while(a != 1){
+				a /= 2;
+				match++;
+			}
+			match = 32 - match;
+			if(match > num_matching){
+				num_matching = match;
+				best_match_gw = rt->gw.S_un.S_addr;
+				memcpy(best_match_iface, rt->interface, sr_IFACE_NAMELEN);
+			}
+		}
+		rt = rt->next;
+	}
+	
+	if(num_matching == 0){
+		/* ERROR */
+	}
+
+}
+
+
+/*---------------------------------------------------------------------
  * Method: handle_arp
  * Scope:  Global
  *
