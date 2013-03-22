@@ -128,6 +128,8 @@ void handle_ip(struct sr_instance* sr,
 	uint32_t dest = ip_header_in->ip_dst;
 	uint32_t src = ip_header_in->ip_src;
 
+	/* TODO */
+
 	struct sr_rt* rt = sr->routing_table;
 
 	int num_matching = 0;
@@ -154,13 +156,13 @@ void handle_ip(struct sr_instance* sr,
 	}
 	
 	if(num_matching == 0){
-		/* ERROR */
+		send_icmp_error(sr, packet, len, interface, 3, 0);
 	}
 
 	if(!(best_match_gw & dest)){
-		/* DEST ON LOCAL NETWORK */
+
 	} else {
-		/* SEND TO ANOTHER ROUTER */
+		
 	}
 
 }
