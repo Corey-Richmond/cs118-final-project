@@ -61,8 +61,6 @@ void send_icmp_error(struct sr_instance* sr,
 	ip_header_out->ip_v = 0x4;
 	ip_header_out->ip_hl = 0x5;
 	ip_header_out->ip_tos = 0x00;
-	ip_header_out->ip_len = 0; /* TODO */
-	ip_header_out->ip_id = 0; /* TODO */
 	ip_header_out->ip_off = 0x0000;
 	ip_header_out->ip_ttl = 0x7f;
 	ip_header_out->ip_p = ip_protocol_icmp;
@@ -89,15 +87,14 @@ void send_icmp_error(struct sr_instance* sr,
 		sr_icmp_t3_hdr_t *icmp_t3_header_out = 
 				(sr_icmp_t3_hdr_t*) (packet_out + IP_DATA_OFF);
 		icmp_t3_header_out->unused = 0x0;
-		icmp_t3_header_out->next_mtu = 1500;
+		icmp_t3_header_out->next_mtu = 0;
 		memcpy(&(icmp_t3_header_out->data), 
 				packet+IP_HEAD_OFF, ICMP_DATA_SIZE);
 	}
 
-	/* ====== Footers ====== */
-	/* Set up easy access to the footers */
-	sr_ethernet_ftr_t *eth_footer_out = 
-			(sr_ethernet_ftr_t*) eth_footer(packet_out,out_len);
+	/* Finish filling out IP header */
+	ip_header_out->ip_len = htons(out_len);
+	ip_header_out->ip_id = htons(out_len); /* TODO */
 
 	/* Fill in the ICMP checksum */
 	icmp_header_out->icmp_sum = 
@@ -106,10 +103,6 @@ void send_icmp_error(struct sr_instance* sr,
 	/* Fill in the IP checksum */
 	ip_header_out->ip_sum = 
 			get_checksum_16(packet_out+IP_HEAD_OFF, out_len-IP_HEAD_OFF);
-
-	/* Fill in the ethernet checksum */
-	eth_footer_out->ether_sum = 
-			get_checksum_32(packet_out, out_len);
 
 	/* ====== End Packet Construction ====== */
 
